@@ -20,12 +20,12 @@ func getContent(url string) ([]byte, error) {
 		fmt.Println(time.Now().Format("01-02-2006 15:04:05"), "Ошибка запроса:", err)
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	//Проверить запрос
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf(time.Now().Format("01-02-2006 15:04:05"), "Неудачный ответ:", resp.Status)
 	}
-	defer resp.Body.Close()
 
 	// Прочитать содержимое ответа
 	body, err := io.ReadAll(resp.Body)
@@ -36,45 +36,43 @@ func getContent(url string) ([]byte, error) {
 }
 
 // Запись тела сайта в новый файл по указанному пути
-func writeBody(content []byte, dstFolder *string, url string) {
+func writeBody(content []byte, dstFolder *string, url string) error {
 	domen := strings.Split(url, "/")
 
 	txtfile, err := os.Create(fmt.Sprintf("%s/%s.txt", *dstFolder, domen[len(domen)-2]))
 	if err != nil {
-		fmt.Println(time.Now().Format("01-02-2006 15:04:05"), "Ошибка при создании файла:", err)
-		return
+		return fmt.Errorf(time.Now().Format("01-02-2006 15:04:05"), "Ошибка при создании файла:", err)
 	}
 
 	_, err = txtfile.Write(content)
 	if err != nil {
-		fmt.Println(time.Now().Format("01-02-2006 15:04:05"), "Ошибка записи в файл:", err)
-		return
+		return fmt.Errorf(time.Now().Format("01-02-2006 15:04:05"), "Ошибка записи в файл:", err)
 	}
 	defer txtfile.Close()
 
 	fmt.Println(time.Now().Format("01-02-2006 15:04:05"), fmt.Sprintf("Запись страницы %s завершена", domen[len(domen)-2]))
-	return
+	return nil
 }
 
 func main() {
+	start := time.Now()
 
 	srcUrl := flag.String("src", "", "Путь до текстового файла, содержащий ссылки")
-	dstFolder := flag.String("dst", "", "Путь до папки для создания нового текстового файла")
+	dstFolder := flag.String("dst", "", "Путь до директории для создания нового текстового файла")
 
 	flag.Parse()
 	if *srcUrl == "" || *dstFolder == "" {
 		fmt.Println(time.Now().Format("01-02-2006 15:04:05"), "Отсутствуют данные о местоположении файла и директории.")
-		fmt.Println("Ожидаемые данные:")
+		fmt.Println("Ожидаемые параметры вызова программы:")
 		flag.PrintDefaults()
 		return
 	}
 	_, err := os.Stat(*dstFolder)
 	if err != nil {
-		fmt.Println("Некорректный путь папки dst:", err)
 		if os.IsNotExist(err) {
-			os.Mkdir(*dstFolder, 777)
+			os.Mkdir(*dstFolder, 0777)
 		} else {
-			fmt.Println("Ошибка при обнаружении папки для создания нового текстового файла:", err)
+			fmt.Println("Ошибка при обнаружении директории для создания нового текстового файла:", err)
 		}
 	}
 
@@ -100,5 +98,7 @@ func main() {
 
 		writeBody(content, dstFolder, url)
 	}
-	fmt.Println("цикл завершен")
+	duration := time.Since(start)
+
+	fmt.Println("Программа завершена. Время выполнения:", duration)
 }
