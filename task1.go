@@ -95,8 +95,7 @@ func main() {
 			continue
 		}
 
-		if writeBody(content, dstFolder, url) != nil
-		{
+		if writeBody(content, dstFolder, url) != nil {
 			continue
 		}
 	}
