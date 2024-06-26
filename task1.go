@@ -43,12 +43,12 @@ func writeBody(content []byte, dstFolder *string, url string) error {
 	if err != nil {
 		return fmt.Errorf(time.Now().Format("01-02-2006 15:04:05"), "Ошибка при создании файла:", err)
 	}
+	defer txtfile.Close()
 
 	_, err = txtfile.Write(content)
 	if err != nil {
 		return fmt.Errorf(time.Now().Format("01-02-2006 15:04:05"), "Ошибка записи в файл:", err)
 	}
-	defer txtfile.Close()
 
 	fmt.Println(time.Now().Format("01-02-2006 15:04:05"), fmt.Sprintf("Запись страницы %s завершена", domen[len(domen)-2]))
 	return nil
@@ -91,12 +91,14 @@ func main() {
 		url := scanner.Text()
 
 		content, err := getContent(url)
-
 		if err != nil {
 			continue
 		}
 
-		writeBody(content, dstFolder, url)
+		if writeBody(content, dstFolder, url) != nil
+		{
+			continue
+		}
 	}
 	duration := time.Since(start)
 
