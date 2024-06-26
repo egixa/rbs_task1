@@ -66,11 +66,16 @@ func main() {
 		fmt.Println(time.Now().Format("01-02-2006 15:04:05"), "Отсутствуют данные о местоположении файла и директории.")
 		fmt.Println("Ожидаемые данные:")
 		flag.PrintDefaults()
-
-		if *dstFolder == "" {
-			os.Mkdir(*dstFolder, 777)
-		}
 		return
+	}
+	_, err := os.Stat(*dstFolder)
+	if err != nil {
+		fmt.Println("Некорректный путь папки dst:", err)
+		if os.IsNotExist(err) {
+			os.Mkdir(*dstFolder, 777)
+		} else {
+			fmt.Println("Ошибка при обнаружении папки для создания нового текстового файла:", err)
+		}
 	}
 
 	// Открыть файл с URL-адресами
