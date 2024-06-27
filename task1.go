@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -30,7 +31,8 @@ func getContent(url string) ([]byte, error) {
 	// Прочитать содержимое ответа
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf(time.Now().Format("01-02-2006 15:04:05"), "Ошибка чтения ответа:", err)
+		fmt.Println(time.Now().Format("01-02-2006 15:04:05"), "Ошибка чтения ответа:", err)
+		return nil, err
 	}
 	return body, nil
 }
@@ -82,23 +84,28 @@ func main() {
 		fmt.Println(time.Now().Format("01-02-2006 15:04:05"), "Ошибка открытия файла:", err)
 		return
 	}
-
 	defer file.Close()
 
 	// Читать строки из файла
 	scanner := bufio.NewScanner(file)
+	var wg sync.WaitGroup
 	for scanner.Scan() {
 		url := scanner.Text()
+		wg.Add(1)
+		go func(url string, wg *sync.WaitGroup) {
+			defer wg.Done()
+			content, err := getContent(url)
+			if err != nil {
+				return
+			}
 
-		content, err := getContent(url)
-		if err != nil {
-			continue
-		}
-
-		if writeBody(content, dstFolder, url) != nil {
-			continue
-		}
+			err = writeBody(content, dstFolder, url)
+			if err != nil {
+				return
+			}
+		}(url, &wg)
 	}
+	wg.Wait()
 	duration := time.Since(start)
 
 	fmt.Println("Программа завершена. Время выполнения:", duration)

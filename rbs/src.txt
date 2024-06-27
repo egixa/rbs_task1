@@ -4,3 +4,4 @@ https://vk.com/
 апраро
 
 fjh7899
+https://medium.com/@hatronix/go-waitgroup-wait-for-multiple-goroutines-to-finish-b092f3278393
